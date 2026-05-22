@@ -286,20 +286,25 @@ function RunSummary({ run }: { run: FlowRun }) {
         <SummaryItem label="By" value={run.triggered_by ?? '—'} />
         <SummaryItem label="State" value={RunStateLabel[run.state]} />
       </View>
-      {run.error_message ? (
-        <View
-          style={{
-            padding: Spacing[3],
-            backgroundColor: '#FEF2F2',
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: '#FECACA',
-          }}>
-          <Text variant="caption" tone="danger">
-            {run.error_message}
-          </Text>
-        </View>
-      ) : null}
+      {run.error_message ? <ErrorMessageBox message={run.error_message} /> : null}
+    </View>
+  );
+}
+
+function ErrorMessageBox({ message }: { message: string }) {
+  const { theme } = useTheme();
+  return (
+    <View
+      style={{
+        padding: Spacing[3],
+        backgroundColor: theme.mode === 'dark' ? 'rgba(239,68,68,0.12)' : '#FEF2F2',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: theme.mode === 'dark' ? 'rgba(239,68,68,0.35)' : '#FECACA',
+      }}>
+      <Text variant="caption" tone="danger">
+        {message}
+      </Text>
     </View>
   );
 }

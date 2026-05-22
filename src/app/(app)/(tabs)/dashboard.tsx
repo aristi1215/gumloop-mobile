@@ -110,12 +110,14 @@ export default function DashboardScreen() {
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: Spacing[2],
-                  backgroundColor: '#FEF2F2',
+                  backgroundColor: theme.mode === 'dark' ? 'rgba(239,68,68,0.12)' : '#FEF2F2',
                   borderWidth: 1,
-                  borderColor: '#FECACA',
+                  borderColor: theme.mode === 'dark' ? 'rgba(239,68,68,0.35)' : '#FECACA',
                 }}>
                 <Ionicons name="alert-circle" color="#EF4444" size={18} />
-                <Text variant="caption" style={{ color: '#991B1B', flex: 1 }}>
+                <Text
+                  variant="caption"
+                  style={{ color: theme.mode === 'dark' ? '#FCA5A5' : '#991B1B', flex: 1 }}>
                   {failingCount} run{failingCount === 1 ? '' : 's'} need attention.
                 </Text>
               </View>

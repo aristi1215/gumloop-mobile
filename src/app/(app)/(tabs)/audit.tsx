@@ -166,6 +166,7 @@ function FilterRow({
 }
 
 function AuditRow({ entry }: { entry: AuditLogEntry }) {
+  const { theme } = useTheme();
   const isFailure = entry.event_type.includes('failed') || entry.event_type.includes('deleted');
 
   return (
@@ -199,10 +200,10 @@ function AuditRow({ entry }: { entry: AuditLogEntry }) {
             paddingHorizontal: Spacing[2],
             paddingVertical: 2,
             borderRadius: 6,
-            backgroundColor: '#FEF2F2',
+            backgroundColor: theme.mode === 'dark' ? 'rgba(239,68,68,0.16)' : '#FEF2F2',
             alignSelf: 'flex-start',
           }}>
-          <Text variant="micro" style={{ color: '#991B1B' }}>
+          <Text variant="micro" style={{ color: theme.mode === 'dark' ? '#FCA5A5' : '#991B1B' }}>
             Security relevant
           </Text>
         </View>

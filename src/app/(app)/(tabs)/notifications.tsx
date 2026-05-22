@@ -13,9 +13,21 @@ import type { AppNotification } from '@/types/notifications';
 import { formatRelativeTime } from '@/utils/format';
 
 const CATEGORY_META = {
-  failure: { icon: 'alert-circle' as const, color: '#EF4444', bg: '#FEF2F2' },
-  termination: { icon: 'stop-circle' as const, color: '#F59E0B', bg: '#FFFBEB' },
-  completion: { icon: 'checkmark-circle' as const, color: '#10B981', bg: '#ECFDF5' },
+  failure: {
+    icon: 'alert-circle' as const,
+    color: '#EF4444',
+    bg: { light: '#FEF2F2', dark: 'rgba(239,68,68,0.16)' },
+  },
+  termination: {
+    icon: 'stop-circle' as const,
+    color: '#F59E0B',
+    bg: { light: '#FFFBEB', dark: 'rgba(245,158,11,0.16)' },
+  },
+  completion: {
+    icon: 'checkmark-circle' as const,
+    color: '#10B981',
+    bg: { light: '#ECFDF5', dark: 'rgba(16,185,129,0.16)' },
+  },
 };
 
 export default function NotificationsScreen() {
@@ -149,7 +161,7 @@ function NotificationRow({
             borderRadius: 18,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: meta.bg,
+            backgroundColor: meta.bg[theme.mode],
           }}>
           <Ionicons name={meta.icon} size={18} color={meta.color} />
         </View>

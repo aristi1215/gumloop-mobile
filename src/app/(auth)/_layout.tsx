@@ -4,7 +4,7 @@ import { useAuth } from '@/providers/AuthProvider';
 
 export default function AuthLayout() {
   const { session, loading } = useAuth();
-  if (!loading && session) return <Redirect href="/(app)/dashboard" />;
+  if (!loading && session) return <Redirect href="/(app)/(tabs)/dashboard" />;
 
   return <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />;
 }

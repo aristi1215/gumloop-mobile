@@ -76,14 +76,14 @@ export function RunCard({ run, onPress }: RunCardProps) {
         {run.error_message ? (
           <View
             style={{
-              backgroundColor: `${theme.primary}08`,
+              backgroundColor: theme.mode === 'dark' ? 'rgba(239,68,68,0.10)' : '#FEF2F2',
               borderRadius: 8,
               padding: Spacing[3],
               flexDirection: 'row',
               gap: Spacing[2],
               alignItems: 'flex-start',
               borderWidth: 1,
-              borderColor: '#FECACA40',
+              borderColor: theme.mode === 'dark' ? 'rgba(239,68,68,0.30)' : '#FECACA',
             }}>
             <Ionicons name="alert-circle-outline" color="#EF4444" size={16} />
             <Text variant="caption" tone="danger" style={{ flex: 1 }} numberOfLines={2}>
