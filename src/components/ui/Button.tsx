@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, View, type PressableProps, type ViewStyle } from 'react-native';
 
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius } from '@/constants/theme';
 import { useTheme } from '@/providers/ThemeProvider';
 import { Text } from './Text';
 
