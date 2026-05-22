@@ -12,16 +12,32 @@ import 'react-native-url-polyfill/auto';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 
 import { AppConfig, isSupabaseConfigured } from '@/constants/config';
 import { createSupabaseMockClient } from './mockClient';
+
+const storage = {
+  getItem: (key: string) => {
+    if (Platform.OS === 'web' && typeof window === 'undefined') return null;
+    return AsyncStorage.getItem(key);
+  },
+  setItem: (key: string, value: string) => {
+    if (Platform.OS === 'web' && typeof window === 'undefined') return;
+    return AsyncStorage.setItem(key, value);
+  },
+  removeItem: (key: string) => {
+    if (Platform.OS === 'web' && typeof window === 'undefined') return;
+    return AsyncStorage.removeItem(key);
+  },
+};
 
 let _client: SupabaseClient | ReturnType<typeof createSupabaseMockClient>;
 
 if (isSupabaseConfigured()) {
   _client = createClient(AppConfig.supabase.url, AppConfig.supabase.anonKey, {
     auth: {
-      storage: AsyncStorage,
+      storage,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,

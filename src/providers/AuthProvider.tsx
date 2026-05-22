@@ -8,6 +8,8 @@ import {
   subscribeToAuthChanges,
   type AuthSession,
 } from '@/services/supabase/auth';
+import { notificationStore } from '@/services/notifications/notificationStore';
+import { bootstrapBackendForSession } from '@/services/supabase/backend';
 
 interface AuthContextValue {
   session: AuthSession;
@@ -41,6 +43,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
       sub.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    void bootstrapBackendForSession()
+      .then(() => notificationStore.hydrate({ force: true }))
+      .catch((error) => {
+        if (__DEV__) console.warn('[auth] backend bootstrap failed', error);
+      });
+  }, [session]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true);

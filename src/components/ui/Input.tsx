@@ -40,10 +40,10 @@ export function Input({
           gap: Spacing[2],
           borderWidth: 1,
           borderColor: errorText ? '#EF4444' : focused ? theme.primary : theme.border,
-          backgroundColor: theme.surface,
+          backgroundColor: 'transparent',
           borderRadius: Radius.md,
           paddingHorizontal: Spacing[3],
-          paddingVertical: Spacing[2],
+          minHeight: 36,
         }}>
         {leftIcon ? <Ionicons name={leftIcon} size={16} color={theme.textMuted} /> : null}
         <TextInput

@@ -91,6 +91,7 @@ export interface DBAuditLogCache {
   event_id: string;
   event_type: string;
   user_id: string;
+  user_email: string | null;
   details: string;
   source_ip: string;
   user_agent: string;
