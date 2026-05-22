@@ -4,7 +4,7 @@ Mobile supervision layer for [Gumloop](https://www.gumloop.com) automations — 
 
 Operators monitor runs, receive failure alerts, kill stuck workflows, and review enterprise audit logs from their phone.
 
-> The app runs end-to-end **without any Gumloop or Supabase credentials**. A realistic in-memory mock layer powers the entire experience until real credentials are wired in.
+> Production defaults to live Gumloop + Supabase. Set `EXPO_PUBLIC_USE_MOCK_API=true` only for local demos without Gumloop credentials.
 
 ## Features
 
@@ -23,7 +23,7 @@ Operators monitor runs, receive failure alerts, kill stuck workflows, and review
 - **Expo SDK 56** + **expo-router** file-based routing
 - **React Native 0.85** + **React 19.2** + **TypeScript** (strict)
 - **NativeWind v4** (TailwindCSS for React Native) — co-exists with `StyleSheet` for fine-grained primitives
-- **Supabase** for auth, database, RLS (gracefully falls back to an in-memory client when not configured)
+- **Supabase** for auth, database persistence, storage, RLS, notification preferences/history, run cache, and audit cache
 - **TanStack Query (v5)** for server state, caching, polling, infinite scroll
 - **expo-notifications** for local push delivery
 - `expo-secure-store`, `react-native-url-polyfill`, `@react-native-async-storage/async-storage`
@@ -57,11 +57,12 @@ src/
     api/                          # Gumloop API client (live + mock adapters)
     notifications/                # Local notification dispatcher + run watcher
     queries/                      # TanStack Query hooks
-    supabase/                     # Supabase client + auth helpers (+ mock fallback)
+    supabase/                     # Supabase client, auth helpers, production persistence
   types/                          # Typed Gumloop / Supabase / notification models
   utils/                          # Formatters
 supabase/
-  schema.sql                      # Postgres schema with RLS
+  migrations/                     # Postgres schema, RLS, storage, bootstrap RPC
+  schema.sql                      # Reference schema
 ```
 
 ## Getting started
@@ -71,11 +72,11 @@ npm install
 npx expo start
 ```
 
-The app boots in mock mode by default. Use any email + password (≥4 chars) at the sign-in screen.
+For local demos without Gumloop credentials, set `EXPO_PUBLIC_USE_MOCK_API=true`. If Supabase env vars are omitted, auth falls back to a local development client.
 
 ### Wiring live credentials
 
-Create a `.env.local` and set:
+Copy `.env.example` to `.env.local` and set:
 
 ```
 EXPO_PUBLIC_USE_MOCK_API=false
@@ -89,7 +90,7 @@ EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
-Run `supabase/schema.sql` against your Supabase project to provision tables, RLS policies, and the `auth.users` → `user_profiles` sync trigger.
+Run the migrations in `supabase/migrations/` against your Supabase project to provision tables, storage, RLS policies, and the `auth.users` → `user_profiles` sync trigger. The `gumloop-mobile` Supabase project has already been migrated in this branch.
 
 That's it — `gumloopAdapter` and `supabase` automatically switch to the live implementations.
 

@@ -3,7 +3,7 @@ import { Alert, ScrollView, Switch, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { Button, Card, Chip, Divider, Screen, ScreenHeader, Text } from '@/components/ui';
-import { AppConfig, isMockMode, isSupabaseConfigured } from '@/constants/config';
+import { AppConfig, isGumloopConfigured, isMockMode, isSupabaseConfigured } from '@/constants/config';
 import { Spacing } from '@/constants/theme';
 import { useNotificationPreferences } from '@/hooks/useNotifications';
 import { useAuth } from '@/providers/AuthProvider';
@@ -84,8 +84,17 @@ export default function SettingsScreen() {
               </View>
             </View>
             <Divider />
-            <Row label="Supabase" value={supabaseMode === 'live' ? 'Connected' : 'Mock'} />
-            <Row label="Gumloop API" value={gumloopAdapter.mode === 'live' ? 'Connected' : 'Mock'} />
+            <Row label="Supabase" value={supabaseMode === 'live' ? 'Connected' : 'Local fallback'} />
+            <Row
+              label="Gumloop API"
+              value={
+                gumloopAdapter.mode === 'mock'
+                  ? 'Demo mode'
+                  : isGumloopConfigured()
+                    ? 'Connected'
+                    : 'Needs credentials'
+              }
+            />
             <Row label="App version" value={AppConfig.appVersion} />
             <Button
               label="Sign out"
@@ -180,12 +189,12 @@ export default function SettingsScreen() {
           </Card>
         </Section>
 
-        {(isMockMode() || !isSupabaseConfigured()) && (
+        {(isMockMode() || !isSupabaseConfigured() || !isGumloopConfigured()) && (
           <Section title="Developer">
             <Card style={{ gap: Spacing[2] }}>
-              <Text variant="bodyStrong">Running in mock mode</Text>
+              <Text variant="bodyStrong">Production configuration</Text>
               <Text variant="caption" tone="muted">
-                Set the following environment variables to switch to live data:
+                Set these variables for live Supabase persistence and Gumloop data:
               </Text>
               <Text variant="mono" tone="brand">
                 EXPO_PUBLIC_USE_MOCK_API=false

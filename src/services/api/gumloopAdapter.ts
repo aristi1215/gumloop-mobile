@@ -10,6 +10,11 @@
  * runtime is therefore a one-flag change.
  */
 import { AppConfig, isMockMode } from '@/constants/config';
+import {
+  cacheAuditLogsToSupabase,
+  cacheRunsToSupabase,
+  syncMonitoredFlowsToSupabase,
+} from '@/services/supabase/backend';
 import type {
   AuditLogQuery,
   AuditLogResponse,
@@ -26,6 +31,14 @@ import type {
 } from '@/types/gumloop';
 import { httpRequest } from './httpClient';
 import { buildInputSchema, mockStore } from './mockData';
+
+async function persistBestEffort(task: Promise<void>, label: string): Promise<void> {
+  try {
+    await task;
+  } catch (error) {
+    if (__DEV__) console.warn(`[gumloopAdapter] ${label} failed`, error);
+  }
+}
 
 export interface GumloopAdapter {
   readonly mode: 'mock' | 'live';
@@ -60,9 +73,11 @@ const liveAdapter: GumloopAdapter = {
   mode: 'live',
 
   async listSavedFlows() {
-    return httpRequest<ListSavedFlowsResponse>('/list_saved_items', {
+    const response = await httpRequest<ListSavedFlowsResponse>('/list_saved_items', {
       query: withUserScope({}),
     });
+    await persistBestEffort(syncMonitoredFlowsToSupabase(response.saved_items), 'sync flows');
+    return response;
   },
 
   async listWorkbooks() {
@@ -72,18 +87,22 @@ const liveAdapter: GumloopAdapter = {
   },
 
   async getRun(runId) {
-    return httpRequest<FlowRun>('/get_pl_run', {
+    const run = await httpRequest<FlowRun>('/get_pl_run', {
       query: withUserScope({ run_id: runId }),
     });
+    await persistBestEffort(cacheRunsToSupabase([run]), 'cache run');
+    return run;
   },
 
   async getRunHistory(params) {
-    return httpRequest<RunHistoryMap>('/get_plrun_saved_item_map', {
+    const history = await httpRequest<RunHistoryMap>('/get_plrun_saved_item_map', {
       query: withUserScope({
         saved_item_id: params.saved_item_id,
         workbook_id: params.workbook_id,
       }) as Record<string, string | number | boolean | undefined | null>,
     });
+    await persistBestEffort(cacheRunsToSupabase(Object.values(history).flat()), 'cache history');
+    return history;
   },
 
   async startRun(request) {
@@ -117,7 +136,7 @@ const liveAdapter: GumloopAdapter = {
   },
 
   async getAuditLogs(query) {
-    return httpRequest<AuditLogResponse>('/get_audit_logs', {
+    const response = await httpRequest<AuditLogResponse>('/get_audit_logs', {
       query: {
         organization_id: query.organization_id ?? AppConfig.gumloop.organizationId,
         user_id: query.user_id ?? AppConfig.gumloop.userId,
@@ -127,6 +146,8 @@ const liveAdapter: GumloopAdapter = {
         page_size: query.page_size,
       },
     });
+    await persistBestEffort(cacheAuditLogsToSupabase(response.audit_logs), 'cache audit logs');
+    return response;
   },
 
   async listRecentRuns() {
@@ -140,7 +161,9 @@ const liveAdapter: GumloopAdapter = {
     for (const history of histories) {
       for (const list of Object.values(history)) merged.push(...list);
     }
-    return merged.sort((a, b) => (a.created_ts < b.created_ts ? 1 : -1));
+    const sorted = merged.sort((a, b) => (a.created_ts < b.created_ts ? 1 : -1));
+    await persistBestEffort(cacheRunsToSupabase(sorted), 'cache recent runs');
+    return sorted;
   },
 };
 

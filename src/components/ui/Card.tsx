@@ -27,6 +27,10 @@ export function Card({
     padding: Spacing[padding],
     borderWidth: variant === 'outlined' ? 1 : variant === 'default' ? 1 : 0,
     borderColor: theme.border,
+    shadowColor: theme.shadow,
+    shadowOpacity: variant === 'default' ? 0.18 : 0,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
   };
 
   return (

@@ -30,9 +30,9 @@ function resolveMode(preference: ThemePreference, system: ResolvedColorScheme): 
 }
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  const [preference, setPreferenceState] = useState<ThemePreference>('system');
+  const [preference, setPreferenceState] = useState<ThemePreference>('dark');
   const [system, setSystem] = useState<ResolvedColorScheme>(
-    () => (Appearance.getColorScheme() ?? 'light') as ResolvedColorScheme,
+    () => (Appearance.getColorScheme() ?? 'dark') as ResolvedColorScheme,
   );
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       }
     });
     const sub = Appearance.addChangeListener(({ colorScheme }) =>
-      setSystem((colorScheme ?? 'light') as ResolvedColorScheme),
+      setSystem((colorScheme ?? 'dark') as ResolvedColorScheme),
     );
     return () => sub.remove();
   }, []);

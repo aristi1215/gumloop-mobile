@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/providers/AuthProvider';
+import { isGumloopConfigured, isMockMode } from '@/constants/config';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { configureNotifications } from '@/services/notifications/notificationService';
@@ -15,23 +16,28 @@ import { runWatcher } from '@/services/notifications/runWatcher';
 
 export default function RootLayout() {
   useEffect(() => {
+    let unsubscribePrefs: (() => void) | undefined;
+    const canWatchRuns = isMockMode() || isGumloopConfigured();
     void configureNotifications();
     void (async () => {
+      if (!canWatchRuns) return;
       await notificationStore.hydrate();
       const prefs = notificationStore.preferences.get();
       if (prefs.enabled) {
         await runWatcher.start({ intervalMs: prefs.pollingIntervalMs });
       }
-      const unsub = notificationStore.preferences.subscribe((next) => {
+      unsubscribePrefs = notificationStore.preferences.subscribe((next) => {
         if (next.enabled) {
           void runWatcher.start({ intervalMs: next.pollingIntervalMs });
         } else {
           runWatcher.stop();
         }
       });
-      return () => unsub();
     })();
-    return () => runWatcher.stop();
+    return () => {
+      unsubscribePrefs?.();
+      runWatcher.stop();
+    };
   }, []);
 
   return (

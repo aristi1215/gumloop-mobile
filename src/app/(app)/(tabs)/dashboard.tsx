@@ -15,6 +15,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useRecentRuns, useSavedFlows } from '@/services/queries/flows';
 import { gumloopAdapter } from '@/services/api';
+import { isGumloopConfigured } from '@/constants/config';
 import type { RunState } from '@/types/gumloop';
 
 export default function DashboardScreen() {
@@ -71,7 +72,13 @@ export default function DashboardScreen() {
           <View style={{ gap: Spacing[3], paddingBottom: Spacing[3] }}>
             <ScreenHeader
               title={`Welcome, ${greetName(user)}`}
-              subtitle={`${recentRuns.data?.length ?? 0} recent runs · ${gumloopAdapter.mode === 'mock' ? 'mock data' : 'live data'}`}
+              subtitle={`${recentRuns.data?.length ?? 0} recent runs · ${
+                gumloopAdapter.mode === 'mock'
+                  ? 'demo data'
+                  : isGumloopConfigured()
+                    ? 'live Gumloop'
+                    : 'configure Gumloop'
+              }`}
               trailing={
                 <View
                   style={{

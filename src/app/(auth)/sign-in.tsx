@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { Button, Card, Input, Screen, Text } from '@/components/ui';
-import { AppConfig, isMockMode, isSupabaseConfigured } from '@/constants/config';
+import { AppConfig, isGumloopConfigured, isMockMode, isSupabaseConfigured } from '@/constants/config';
 import { Palette, Spacing } from '@/constants/theme';
 import { useAuth } from '@/providers/AuthProvider';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -34,8 +34,8 @@ export default function SignInScreen() {
   return (
     <Screen edges={['top', 'bottom']}>
       <LinearGradient
-        colors={[Palette.brand[600], Palette.brand[500], theme.background]}
-        locations={[0, 0.35, 1]}
+        colors={[theme.background, Palette.brand[900], Palette.brand[500]]}
+        locations={[0, 0.58, 1]}
         style={{ flex: 1 }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -46,16 +46,18 @@ export default function SignInScreen() {
                 width: 44,
                 height: 44,
                 borderRadius: 12,
-                backgroundColor: '#FFFFFF22',
+                backgroundColor: theme.primarySubtle,
+                borderWidth: 1,
+                borderColor: theme.border,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-              <Ionicons name="layers-outline" color="#FFFFFF" size={22} />
+              <Ionicons name="layers-outline" color={theme.primary} size={22} />
             </View>
-            <Text variant="display" style={{ color: '#FFFFFF' }}>
+            <Text variant="display" style={{ color: theme.text }}>
               Gumloop{'\n'}Native
             </Text>
-            <Text variant="body" style={{ color: '#FFFFFFCC' }}>
+            <Text variant="body" style={{ color: theme.textMuted }}>
               Mobile supervision for your enterprise automations.
             </Text>
           </View>
@@ -97,7 +99,7 @@ export default function SignInScreen() {
               fullWidth
               size="lg"
             />
-            {isMockMode() || !isSupabaseConfigured() ? (
+            {isMockMode() || !isSupabaseConfigured() || !isGumloopConfigured() ? (
               <View
                 style={{
                   flexDirection: 'row',
@@ -107,10 +109,15 @@ export default function SignInScreen() {
                   backgroundColor: theme.primarySubtle,
                   borderRadius: 8,
                 }}>
-                <Ionicons name="flask-outline" color={theme.primary} size={16} />
+                <Ionicons
+                  name={isMockMode() ? 'flask-outline' : 'warning-outline'}
+                  color={theme.primary}
+                  size={16}
+                />
                 <Text variant="caption" tone="brand" style={{ flex: 1 }}>
-                  Dev mode: any email + password works. Replace mock providers in
-                  src/constants/config.ts when credentials are ready.
+                  {isMockMode() || !isSupabaseConfigured()
+                    ? 'Demo mode is enabled because local credentials are not configured.'
+                    : 'Gumloop credentials are required before live workflow data can load.'}
                 </Text>
               </View>
             ) : null}

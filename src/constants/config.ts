@@ -1,12 +1,12 @@
 /**
  * Runtime configuration.
  *
- * `USE_MOCK_API` is the master switch for the Gumloop API mock adapter.
- * When credentials are wired up, set `EXPO_PUBLIC_USE_MOCK_API=false` and
- * provide `EXPO_PUBLIC_GUMLOOP_API_KEY` / `EXPO_PUBLIC_GUMLOOP_USER_ID`.
+ * `USE_MOCK_API` is an explicit demo switch for the Gumloop API mock adapter.
+ * Production builds should leave it unset/false and provide
+ * `EXPO_PUBLIC_GUMLOOP_API_KEY` / `EXPO_PUBLIC_GUMLOOP_USER_ID`.
  *
  * Supabase credentials are loaded from `EXPO_PUBLIC_SUPABASE_URL` and
- * `EXPO_PUBLIC_SUPABASE_ANON_KEY`. When these are missing we transparently
+ * `EXPO_PUBLIC_SUPABASE_ANON_KEY` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. When these are missing we transparently
  * fall back to an in-memory Supabase stub so the app remains fully usable
  * in development.
  */
@@ -35,13 +35,13 @@ export const AppConfig = {
     userId: readEnv('EXPO_PUBLIC_GUMLOOP_USER_ID') ?? '',
     projectId: readEnv('EXPO_PUBLIC_GUMLOOP_PROJECT_ID') ?? '',
     organizationId: readEnv('EXPO_PUBLIC_GUMLOOP_ORG_ID') ?? '',
-    /** Master switch — defaults to true while credentials aren't configured. */
-    useMockApi: readBool('EXPO_PUBLIC_USE_MOCK_API', true),
+    /** Demo switch — production defaults to live Gumloop APIs. */
+    useMockApi: readBool('EXPO_PUBLIC_USE_MOCK_API', false),
   },
 
   supabase: {
     url: readEnv('EXPO_PUBLIC_SUPABASE_URL') ?? '',
-    anonKey: readEnv('EXPO_PUBLIC_SUPABASE_ANON_KEY') ?? '',
+    anonKey: readEnv('EXPO_PUBLIC_SUPABASE_ANON_KEY') ?? readEnv('EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY') ?? '',
   },
 
   polling: {
@@ -58,8 +58,11 @@ export const AppConfig = {
 } as const;
 
 export function isMockMode(): boolean {
-  // We force mock mode if either explicit env flag is true OR credentials are missing.
-  return AppConfig.gumloop.useMockApi || !AppConfig.gumloop.apiKey || !AppConfig.gumloop.userId;
+  return AppConfig.gumloop.useMockApi;
+}
+
+export function isGumloopConfigured(): boolean {
+  return Boolean(AppConfig.gumloop.apiKey) && Boolean(AppConfig.gumloop.userId);
 }
 
 export function isSupabaseConfigured(): boolean {
