@@ -31,6 +31,9 @@ import type {
 } from '@/types/gumloop';
 import { httpRequest } from './httpClient';
 import { buildInputSchema, mockStore } from './mockData';
+import { logAdapterCall, logGumloopStartup, logRequestScope } from './gumloopDebug';
+
+if (__DEV__) logGumloopStartup();
 
 async function persistBestEffort(task: Promise<void>, label: string): Promise<void> {
   try {
@@ -58,11 +61,15 @@ export interface GumloopAdapter {
 // Live adapter
 // -----------------------------------------------------------------------------
 
-function withUserScope<T extends Record<string, unknown>>(query: T): T & {
+function withUserScope<T extends Record<string, unknown>>(
+  query: T,
+  scopeLabel?: string,
+): T & {
   user_id?: string;
   project_id?: string;
 } {
   const { userId, projectId } = AppConfig.gumloop;
+  if (scopeLabel) logRequestScope(scopeLabel);
   return {
     ...query,
     ...(projectId ? { project_id: projectId } : { user_id: userId }),
@@ -73,8 +80,9 @@ const liveAdapter: GumloopAdapter = {
   mode: 'live',
 
   async listSavedFlows() {
+    logAdapterCall('listSavedFlows');
     const response = await httpRequest<ListSavedFlowsResponse>('/list_saved_items', {
-      query: withUserScope({}),
+      query: withUserScope({}, 'listSavedFlows'),
     });
     await persistBestEffort(syncMonitoredFlowsToSupabase(response.saved_items), 'sync flows');
     return response;
@@ -151,6 +159,7 @@ const liveAdapter: GumloopAdapter = {
   },
 
   async listRecentRuns() {
+    logAdapterCall('listRecentRuns', 'calls listSavedFlows then getRunHistory per flow');
     // Gumloop doesn't expose a single endpoint for "all recent runs", so we
     // fan-out across saved flows and merge.
     const { saved_items } = await this.listSavedFlows();
@@ -281,7 +290,12 @@ const mockAdapter: GumloopAdapter = {
   },
 };
 
-export const gumloopAdapter: GumloopAdapter = isMockMode() ? mockAdapter : liveAdapter;
+const selectedAdapter = isMockMode() ? mockAdapter : liveAdapter;
+export const gumloopAdapter: GumloopAdapter = selectedAdapter;
+
+if (__DEV__) {
+  console.log('[Gumloop] Active adapter:', selectedAdapter.mode);
+}
 
 /** Exposed for tests / explicit overrides. */
 export { liveAdapter, mockAdapter };
