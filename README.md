@@ -1,56 +1,121 @@
-# Welcome to your Expo app 👋
+# Gumloop Native
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mobile supervision layer for [Gumloop](https://www.gumloop.com) automations — built with **Expo SDK 56**, **React Native 0.85**, **TypeScript**, **NativeWind**, **Supabase**, and **TanStack Query**.
 
-## Get started
+Operators monitor runs, receive failure alerts, kill stuck workflows, and review enterprise audit logs from their phone.
 
-1. Install dependencies
+> The app runs end-to-end **without any Gumloop or Supabase credentials**. A realistic in-memory mock layer powers the entire experience until real credentials are wired in.
 
-   ```bash
-   npm install
-   ```
+## Features
 
-2. Start the app
+| Area                | What's included                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| Auth                | Supabase email/password, secure session persistence, protected routes, sign out                       |
+| Dashboard           | Live run feed, FAILED/TERMINATED prioritized, search, status & workspace filters, infinite scroll, pull-to-refresh, background polling |
+| Flow detail         | Current run summary, inputs/outputs, ANSI-aware log viewer w/ search, historical runs, input schema, start/retry/kill/refresh actions |
+| Notifications       | Background watcher with state-transition detection, local push delivery, per-flow opt-in/out, history, deep linking |
+| Audit log           | Enterprise admin viewer with date-range, event filters, search, pagination                            |
+| Settings            | Notification toggles, polling interval, theme (system/light/dark), workspace selection, account info  |
+| Design system       | Token-based design (mirrored in Tailwind + JS), dark mode, skeletons, status badges, reusable cards   |
 
-   ```bash
-   npx expo start
-   ```
+## Tech stack
 
-In the output, you'll find options to open the app in a
+- **Expo SDK 56** + **expo-router** file-based routing
+- **React Native 0.85** + **React 19.2** + **TypeScript** (strict)
+- **NativeWind v4** (TailwindCSS for React Native) — co-exists with `StyleSheet` for fine-grained primitives
+- **Supabase** for auth, database, RLS (gracefully falls back to an in-memory client when not configured)
+- **TanStack Query (v5)** for server state, caching, polling, infinite scroll
+- **expo-notifications** for local push delivery
+- `expo-secure-store`, `react-native-url-polyfill`, `@react-native-async-storage/async-storage`
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Project structure
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+src/
+  app/                            # expo-router routes
+    _layout.tsx                   # Root providers + notification watcher boot
+    index.tsx                     # Splash redirect → auth or app
+    (auth)/sign-in.tsx
+    (app)/
+      _layout.tsx                 # Auth-guarded stack
+      (tabs)/
+        dashboard.tsx
+        notifications.tsx
+        audit.tsx
+        settings.tsx
+      flow/[id].tsx               # Flow detail screen
+  components/
+    TabBar.tsx                    # Custom bottom tab bar
+    ui/                           # Reusable design-system components
+  constants/
+    theme.ts                      # Design tokens (also mirrored in tailwind.config.js)
+    config.ts                     # Env / runtime config + mock toggle
+  features/runs/                  # Run cards, filters, log viewer, sort logic
+  hooks/                          # Reusable hooks (useDebouncedValue, useNotifications…)
+  providers/                      # AuthProvider, ThemeProvider, QueryProvider
+  services/
+    api/                          # Gumloop API client (live + mock adapters)
+    notifications/                # Local notification dispatcher + run watcher
+    queries/                      # TanStack Query hooks
+    supabase/                     # Supabase client + auth helpers (+ mock fallback)
+  types/                          # Typed Gumloop / Supabase / notification models
+  utils/                          # Formatters
+supabase/
+  schema.sql                      # Postgres schema with RLS
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Getting started
 
-### Other setup steps
+```bash
+npm install
+npx expo start
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+The app boots in mock mode by default. Use any email + password (≥4 chars) at the sign-in screen.
 
-## Learn more
+### Wiring live credentials
 
-To learn more about developing your project with Expo, look at the following resources:
+Create a `.env.local` and set:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```
+EXPO_PUBLIC_USE_MOCK_API=false
+EXPO_PUBLIC_GUMLOOP_BASE_URL=https://api.gumloop.com/api/v1
+EXPO_PUBLIC_GUMLOOP_API_KEY=...
+EXPO_PUBLIC_GUMLOOP_USER_ID=...
+EXPO_PUBLIC_GUMLOOP_PROJECT_ID=...        # optional
+EXPO_PUBLIC_GUMLOOP_ORG_ID=...            # required for audit logs
 
-## Join the community
+EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=...
+```
 
-Join our community of developers creating universal apps.
+Run `supabase/schema.sql` against your Supabase project to provision tables, RLS policies, and the `auth.users` → `user_profiles` sync trigger.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+That's it — `gumloopAdapter` and `supabase` automatically switch to the live implementations.
+
+## Gumloop API mapping
+
+The mock layer matches Gumloop's public OpenAPI shapes so the swap is drop-in. Cross-referenced sources:
+
+| Service method                  | Live endpoint                                |
+| ------------------------------- | -------------------------------------------- |
+| `listSavedFlows()`              | `GET /list_saved_items`                      |
+| `listWorkbooks()`               | `GET /list_workbooks`                        |
+| `getRun(runId)`                 | `GET /get_pl_run`                            |
+| `getRunHistory({...})`          | `GET /get_plrun_saved_item_map`              |
+| `startRun({...})`               | `POST /start_pipeline`                       |
+| `killRun(runId)`                | `POST /kill_pipeline`                        |
+| `getInputSchema(savedItemId)`   | `GET /get_saved_item_input_schema`           |
+| `getAuditLogs({...})`           | `GET /get_audit_logs`                        |
+
+Authentication uses `Authorization: Bearer <api_key>` + the `x-auth-key` user header per Gumloop's docs.
+
+## Scripts
+
+```bash
+npm start          # expo start
+npm run android    # expo start --android
+npm run ios        # expo start --ios
+npm run web        # expo start --web
+npm run lint       # expo lint
+```
