@@ -42,6 +42,7 @@ export const AppConfig = {
   supabase: {
     url: readEnv('EXPO_PUBLIC_SUPABASE_URL') ?? '',
     anonKey: readEnv('EXPO_PUBLIC_SUPABASE_ANON_KEY') ?? readEnv('EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY') ?? '',
+    useMockAuth: readBool('EXPO_PUBLIC_USE_MOCK_SUPABASE', false),
   },
 
   polling: {
@@ -66,5 +67,5 @@ export function isGumloopConfigured(): boolean {
 }
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(AppConfig.supabase.url) && Boolean(AppConfig.supabase.anonKey);
+  return !AppConfig.supabase.useMockAuth && Boolean(AppConfig.supabase.url) && Boolean(AppConfig.supabase.anonKey);
 }

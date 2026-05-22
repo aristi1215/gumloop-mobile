@@ -72,7 +72,7 @@ npm install
 npx expo start
 ```
 
-For local demos without Gumloop credentials, set `EXPO_PUBLIC_USE_MOCK_API=true`. If Supabase env vars are omitted, auth falls back to a local development client.
+For local demos without Gumloop credentials, set `EXPO_PUBLIC_USE_MOCK_API=true`. If Supabase env vars are omitted, auth falls back to a local development client; if your shell already has Supabase env vars but you still want local demo auth, set `EXPO_PUBLIC_USE_MOCK_SUPABASE=true`.
 
 ### Wiring live credentials
 
@@ -80,6 +80,7 @@ Copy `.env.example` to `.env.local` and set:
 
 ```
 EXPO_PUBLIC_USE_MOCK_API=false
+EXPO_PUBLIC_USE_MOCK_SUPABASE=false
 EXPO_PUBLIC_GUMLOOP_BASE_URL=https://api.gumloop.com/api/v1
 EXPO_PUBLIC_GUMLOOP_API_KEY=...
 EXPO_PUBLIC_GUMLOOP_USER_ID=...

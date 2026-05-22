@@ -116,7 +116,7 @@ export default function SignInScreen() {
                 />
                 <Text variant="caption" tone="brand" style={{ flex: 1 }}>
                   {isMockMode() || !isSupabaseConfigured()
-                    ? 'Demo mode is enabled because local credentials are not configured.'
+                    ? 'Demo mode is enabled for local auth or Gumloop workflow data.'
                     : 'Gumloop credentials are required before live workflow data can load.'}
                 </Text>
               </View>

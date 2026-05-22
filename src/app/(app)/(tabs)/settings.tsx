@@ -200,6 +200,9 @@ export default function SettingsScreen() {
                 EXPO_PUBLIC_USE_MOCK_API=false
               </Text>
               <Text variant="mono" tone="brand">
+                EXPO_PUBLIC_USE_MOCK_SUPABASE=false
+              </Text>
+              <Text variant="mono" tone="brand">
                 EXPO_PUBLIC_GUMLOOP_API_KEY=…
               </Text>
               <Text variant="mono" tone="brand">
