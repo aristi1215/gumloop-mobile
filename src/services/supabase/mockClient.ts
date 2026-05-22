@@ -7,6 +7,7 @@
  * AsyncStorage so it survives reloads.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 interface MockUser {
   id: string;
@@ -31,15 +32,23 @@ const DEFAULT_DEV_USER: MockUser = {
   user_metadata: { display_name: 'Demo Operator' },
 };
 
+function canUseAsyncStorage(): boolean {
+  return Platform.OS !== 'web' || typeof window !== 'undefined';
+}
+
 class MockAuth {
   private session: MockSession | null = null;
   private listeners = new Set<Listener>();
 
   constructor() {
-    void this.hydrate();
+    if (canUseAsyncStorage()) void this.hydrate();
   }
 
   private async hydrate(): Promise<void> {
+    if (!canUseAsyncStorage()) {
+      this.notify('INITIAL_SESSION');
+      return;
+    }
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -54,6 +63,7 @@ class MockAuth {
   }
 
   private async persist(): Promise<void> {
+    if (!canUseAsyncStorage()) return;
     if (this.session) {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.session));
     } else {
@@ -68,8 +78,10 @@ class MockAuth {
   async getSession(): Promise<{ data: { session: MockSession | null }; error: null }> {
     if (!this.session) {
       // ensure hydration if called early
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      if (raw) this.session = JSON.parse(raw) as MockSession;
+      if (canUseAsyncStorage()) {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (raw) this.session = JSON.parse(raw) as MockSession;
+      }
     }
     return { data: { session: this.session }, error: null };
   }
