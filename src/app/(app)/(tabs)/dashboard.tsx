@@ -1,9 +1,10 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { EmptyState, Input, Screen, ScreenHeader, Text } from '@/components/ui';
+import { isGumloopConfigured } from '@/constants/config';
 import { Spacing } from '@/constants/theme';
 import { RunCard } from '@/features/runs/RunCard';
 import { RunCardSkeleton } from '@/features/runs/RunCardSkeleton';
@@ -13,9 +14,8 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useNotificationPreferences } from '@/hooks/useNotifications';
 import { useAuth } from '@/providers/AuthProvider';
 import { useTheme } from '@/providers/ThemeProvider';
-import { useRecentRuns, useSavedFlows } from '@/services/queries/flows';
 import { gumloopAdapter } from '@/services/api';
-import { isGumloopConfigured } from '@/constants/config';
+import { useRecentRuns, useSavedFlows } from '@/services/queries/flows';
 import type { RunState } from '@/types/gumloop';
 
 export default function DashboardScreen() {

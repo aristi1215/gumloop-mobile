@@ -10,6 +10,7 @@
  */
 import { AppConfig } from '@/constants/config';
 import { ApiError } from './errors';
+import { logHttpAttempt, logHttpFailure } from './gumloopDebug';
 
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -72,8 +73,11 @@ export async function httpRequest<T>(path: string, options: RequestOptions = {})
   if (apiKey) finalHeaders.Authorization = `Bearer ${apiKey}`;
   if (userId) finalHeaders['x-auth-key'] = userId;
 
+  const authFlags = { hasApiKey: Boolean(apiKey), hasUserId: Boolean(userId) };
+
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
+    logHttpAttempt(method, path, { ...authFlags, attempt: attempt + 1 });
     try {
       const response = await fetch(url, {
         method,
@@ -97,6 +101,7 @@ export async function httpRequest<T>(path: string, options: RequestOptions = {})
           await delay(baseDelayMs * 2 ** attempt);
           continue;
         }
+        logHttpFailure(method, path, response.status, parsed, authFlags);
         throw ApiError.fromStatus(response.status, path, parsed);
       }
 
