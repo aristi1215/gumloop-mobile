@@ -1,69 +1,72 @@
-# Gumloop Native
+# Gumloop Mobile
 
-Mobile supervision layer for [Gumloop](https://www.gumloop.com) automations — built with **Expo SDK 56**, **React Native 0.85**, **TypeScript**, **NativeWind**, **Supabase**, and **TanStack Query**.
+**Your Gumloop automations, in your pocket.**
 
-Operators monitor runs, receive failure alerts, kill stuck workflows, and review enterprise audit logs from their phone.
+Gumloop Mobile is a native supervision layer for [Gumloop](https://www.gumloop.com) workflows. It connects directly to Gumloop's public API so operators can monitor pipeline runs, respond to failures instantly, and keep automations healthy â€” without opening a laptop.
 
-> Production defaults to live Gumloop + Supabase. Set `EXPO_PUBLIC_USE_MOCK_API=true` only for local demos without Gumloop credentials.
+Built for teams who run production automations and need **real-time visibility on mobile**.
 
-## Features
+---
 
-| Area                | What's included                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------------------------------- |
-| Auth                | Supabase email/password, secure session persistence, protected routes, sign out                       |
-| Dashboard           | Live run feed, FAILED/TERMINATED prioritized, search, status & workspace filters, infinite scroll, pull-to-refresh, background polling |
-| Flow detail         | Current run summary, inputs/outputs, ANSI-aware log viewer w/ search, historical runs, input schema, start/retry/kill/refresh actions |
-| Notifications       | Background watcher with state-transition detection, local push delivery, per-flow opt-in/out, history, deep linking |
-| Audit log           | Enterprise admin viewer with date-range, event filters, search, pagination                            |
-| Settings            | Notification toggles, polling interval, theme (system/light/dark), workspace selection, account info  |
-| Design system       | Token-based design (mirrored in Tailwind + JS), dark mode, skeletons, status badges, reusable cards   |
+## The problem it solves
+
+Automation platforms are powerful at the desk, but ops don't stop when you leave it. When a pipeline fails at 11 PM, you need to know immediately â€” and sometimes you need to kill a stuck run or retry from your phone. This app closes that gap.
+
+| Capability | Impact |
+|------------|--------|
+| **Live run dashboard** | FAILED/TERMINATED runs surface first â€” no digging |
+| **Flow control** | Start, retry, kill, and refresh pipelines remotely |
+| **Push notifications** | Background watcher detects state transitions and alerts you |
+| **Audit logs** | Enterprise admin viewer with filters, search, and pagination |
+| **Secure auth** | Supabase email/password with protected routes and session persistence |
+
+---
 
 ## Tech stack
 
-- **Expo SDK 56** + **expo-router** file-based routing
-- **React Native 0.85** + **React 19.2** + **TypeScript** (strict)
-- **NativeWind v4** (TailwindCSS for React Native) — co-exists with `StyleSheet` for fine-grained primitives
-- **Supabase** for auth, database persistence, storage, RLS, notification preferences/history, run cache, and audit cache
-- **TanStack Query (v5)** for server state, caching, polling, infinite scroll
-- **expo-notifications** for local push delivery
-- `expo-secure-store`, `react-native-url-polyfill`, `@react-native-async-storage/async-storage`
+- **Expo SDK 56** + **expo-router** (file-based routing)
+- **React Native 0.85** + **React 19** + **TypeScript** (strict)
+- **NativeWind v4** â€” TailwindCSS for React Native
+- **Supabase** â€” Auth, Postgres, RLS, notification prefs/history, run cache
+- **TanStack Query v5** â€” Server state, caching, polling, infinite scroll
+- **expo-notifications** â€” Local push delivery with deep linking
 
-## Project structure
+> Production defaults to live Gumloop + Supabase. Set `EXPO_PUBLIC_USE_MOCK_API=true` only for local demos without Gumloop credentials.
+
+---
+
+## Architecture
 
 ```
 src/
-  app/                            # expo-router routes
-    _layout.tsx                   # Root providers + notification watcher boot
-    index.tsx                     # Splash redirect → auth or app
-    (auth)/sign-in.tsx
-    (app)/
-      _layout.tsx                 # Auth-guarded stack
-      (tabs)/
-        dashboard.tsx
-        notifications.tsx
-        audit.tsx
-        settings.tsx
-      flow/[id].tsx               # Flow detail screen
-  components/
-    TabBar.tsx                    # Custom bottom tab bar
-    ui/                           # Reusable design-system components
-  constants/
-    theme.ts                      # Design tokens (also mirrored in tailwind.config.js)
-    config.ts                     # Env / runtime config + mock toggle
-  features/runs/                  # Run cards, filters, log viewer, sort logic
-  hooks/                          # Reusable hooks (useDebouncedValue, useNotifications…)
-  providers/                      # AuthProvider, ThemeProvider, QueryProvider
+  app/                  # expo-router routes (auth, tabs, flow detail)
+  components/           # Tab bar + design-system UI
+  features/runs/        # Run cards, filters, log viewer
   services/
-    api/                          # Gumloop API client (live + mock adapters)
-    notifications/                # Local notification dispatcher + run watcher
-    queries/                      # TanStack Query hooks
-    supabase/                     # Supabase client, auth helpers, production persistence
-  types/                          # Typed Gumloop / Supabase / notification models
-  utils/                          # Formatters
-supabase/
-  migrations/                     # Postgres schema, RLS, storage, bootstrap RPC
-  schema.sql                      # Reference schema
+    api/                # Gumloop API client (live + mock adapters)
+    notifications/      # Background watcher + push dispatcher
+    supabase/           # Auth, persistence, production cache
+  providers/            # Auth, Theme, Query providers
+supabase/migrations/    # Postgres schema, RLS, storage
 ```
+
+The mock layer mirrors Gumloop's OpenAPI shapes â€” swapping to live credentials is drop-in.
+
+---
+
+## Gumloop API integration
+
+| Service method | Live endpoint |
+|----------------|---------------|
+| `listSavedFlows()` | `GET /list_saved_items` |
+| `getRun(runId)` | `GET /get_pl_run` |
+| `startRun({...})` | `POST /start_pipeline` |
+| `killRun(runId)` | `POST /kill_pipeline` |
+| `getAuditLogs({...})` | `GET /get_audit_logs` |
+
+Authentication uses `Authorization: Bearer <api_key>` + the `x-auth-key` user header per Gumloop's docs.
+
+---
 
 ## Getting started
 
@@ -72,52 +75,25 @@ npm install
 npx expo start
 ```
 
-For local demos without Gumloop credentials, set `EXPO_PUBLIC_USE_MOCK_API=true`. If Supabase env vars are omitted, auth falls back to a local development client; if your shell already has Supabase env vars but you still want local demo auth, set `EXPO_PUBLIC_USE_MOCK_SUPABASE=true`.
-
-### Wiring live credentials
-
-Copy `.env.example` to `.env.local` and set:
-
-```
-EXPO_PUBLIC_USE_MOCK_API=false
-EXPO_PUBLIC_USE_MOCK_SUPABASE=false
-EXPO_PUBLIC_GUMLOOP_BASE_URL=https://api.gumloop.com/api/v1
-EXPO_PUBLIC_GUMLOOP_API_KEY=...
-EXPO_PUBLIC_GUMLOOP_USER_ID=...
-EXPO_PUBLIC_GUMLOOP_PROJECT_ID=...        # optional
-EXPO_PUBLIC_GUMLOOP_ORG_ID=...            # required for audit logs
-
-EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=...
-```
-
-Run the migrations in `supabase/migrations/` against your Supabase project to provision tables, storage, RLS policies, and the `auth.users` → `user_profiles` sync trigger. The `gumloop-mobile` Supabase project has already been migrated in this branch.
-
-That's it — `gumloopAdapter` and `supabase` automatically switch to the live implementations.
-
-## Gumloop API mapping
-
-The mock layer matches Gumloop's public OpenAPI shapes so the swap is drop-in. Cross-referenced sources:
-
-| Service method                  | Live endpoint                                |
-| ------------------------------- | -------------------------------------------- |
-| `listSavedFlows()`              | `GET /list_saved_items`                      |
-| `listWorkbooks()`               | `GET /list_workbooks`                        |
-| `getRun(runId)`                 | `GET /get_pl_run`                            |
-| `getRunHistory({...})`          | `GET /get_plrun_saved_item_map`              |
-| `startRun({...})`               | `POST /start_pipeline`                       |
-| `killRun(runId)`                | `POST /kill_pipeline`                        |
-| `getInputSchema(savedItemId)`   | `GET /get_saved_item_input_schema`           |
-| `getAuditLogs({...})`           | `GET /get_audit_logs`                        |
-
-Authentication uses `Authorization: Bearer <api_key>` + the `x-auth-key` user header per Gumloop's docs.
-
-## Scripts
+Copy `.env.example` to `.env.local` and configure Gumloop + Supabase credentials. Run migrations in `supabase/migrations/` against your Supabase project.
 
 ```bash
 npm start          # expo start
 npm run android    # expo start --android
 npm run ios        # expo start --ios
-npm run web        # expo start --web
 npm run lint       # expo lint
 ```
+
+---
+
+## What this demonstrates
+
+- **Third-party API integration** â€” Production mapping to Gumloop's public OpenAPI
+- **Mobile-first ops UX** â€” Polling, infinite scroll, pull-to-refresh, background tasks
+- **Adapter pattern** â€” Mock/live swap for development without credential lock-in
+- **Enterprise features** â€” Audit logs, notification preferences, workspace selection
+- **Design system discipline** â€” Token-based theming with dark mode and reusable primitives
+
+---
+
+Built by [aristi1215](https://github.com/aristi1215)
